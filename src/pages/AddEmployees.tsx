@@ -6,17 +6,13 @@ import { useDispatch, useSelector } from 'react-redux'
 import { states } from '../utils/variables'
 import AddEmployeeModal from '../components/addEmployeeModal'
 import type { RootState } from '../store/store'
-import type { Employee } from '../lib/types';
+import type { Employee, FormData } from '../lib/types';
 
 
-// Calculer la date il y a 18 ans
+// Zod schema & date checks
 const eighteenYearsAgo = new Date();
 eighteenYearsAgo.setFullYear(eighteenYearsAgo.getFullYear() - 18);
-
-// Calculer la date du jour
 const today = new Date();
-
-// Fonction pour créer le schéma de validation avec les employés existants
 const createEmployeeSchema = (existingEmployees: Employee[]) => {
     return z.object({
         firstName: z.string().min(2, { message: 'First name is required' }),
@@ -48,15 +44,15 @@ const createEmployeeSchema = (existingEmployees: Employee[]) => {
     ).refine(
         (data) => {
             // Vérifier que l'employé n'existe pas déjà dans le store
-            return !existingEmployees.some((employee: Employee) => 
-                employee.firstName === data.firstName && 
-                employee.lastName === data.lastName && 
-                employee.dateOfBirth === data.dateOfBirth && 
-                employee.startDate === data.startDate && 
-                employee.street === data.street && 
-                employee.city === data.city && 
-                employee.state === data.state && 
-                employee.zipCode === data.zipCode && 
+            return !existingEmployees.some((employee: Employee) =>
+                employee.firstName === data.firstName &&
+                employee.lastName === data.lastName &&
+                employee.dateOfBirth === data.dateOfBirth &&
+                employee.startDate === data.startDate &&
+                employee.street === data.street &&
+                employee.city === data.city &&
+                employee.state === data.state &&
+                employee.zipCode === data.zipCode &&
                 employee.department === data.department
             );
         },
@@ -67,39 +63,31 @@ const createEmployeeSchema = (existingEmployees: Employee[]) => {
     );
 }
 
-interface FormData {
-    disabled: boolean;
-    error: string | null;
-    success: boolean;
-}
-
 export default function AddEmployees() {
     const [formData, setFormData] = useState<FormData>({
         disabled: false,
-        error : null,
-        success : false,
+        error: null,
+        success: false,
     });
     const existingEmployees = useSelector((state: RootState) => state.employees.list) as Employee[];
     const dispatch = useDispatch();
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-       setFormData({
-        disabled: true,
-        error: null,
-        success: false,
-       });
         e.preventDefault();
+        setFormData({
+            disabled: true,
+            error: null,
+            success: false,
+        });
         const formData = new FormData(e.target as HTMLFormElement);
         const data = Object.fromEntries(formData);
-        
-        // Créer le schéma de validation avec les employés existants
+
         const employeeSchema = createEmployeeSchema(existingEmployees);
         const validatedData = employeeSchema.safeParse(data);
-        
+
         if (!validatedData.success) {
             console.error(validatedData.error);
-            // Récupérer le premier message d'erreur
             const firstError = validatedData.error.issues[0]?.message;
             setFormData({
                 disabled: false,
@@ -108,17 +96,16 @@ export default function AddEmployees() {
             });
             return;
         }
-        // Enregistrement des données dans le store et local storage
         dispatch(addEmployee({
             ...validatedData.data,
         }));
         setFormData({
             disabled: false,
-                error: null,
-                success: true,
-            });
-            setIsModalOpen(true);
-        
+            error: null,
+            success: true,
+        });
+        setIsModalOpen(true);
+
     }
     return (
         <main className="flex flex-col gap-4 justify-center items-center p-4 max-w-screen max-h-screen">
@@ -137,32 +124,32 @@ export default function AddEmployees() {
                             </div>
                             <div className="flex flex-col w-1/2">
                                 <label htmlFor="lastName" className="block text-sm font-medium">Last Name</label>
-                            <input type="text" id="lastName" name="lastName" placeholder="Dylan" required />
+                                <input type="text" id="lastName" name="lastName" placeholder="Dylan" required />
                             </div>
                         </div>
                         <div className="flex">
                             <div className="flex flex-col w-1/2">
                                 <label htmlFor="dateOfBirth" className="block text-sm font-medium cursor-pointer">Date of Birth</label>
-                                <input 
-                                    type="date" 
-                                    id="dateOfBirth" 
-                                    name="dateOfBirth" 
-                                    placeholder="1990-01-01" 
-                                    className="w-3/4" 
+                                <input
+                                    type="date"
+                                    id="dateOfBirth"
+                                    name="dateOfBirth"
+                                    placeholder="1990-01-01"
+                                    className="w-3/4"
                                     max={eighteenYearsAgo.toISOString().split('T')[0]}
-                                    required 
+                                    required
                                 />
                             </div>
                             <div className="flex flex-col w-1/2">
                                 <label htmlFor="startDate" className="block text-sm font-medium cursor-pointer">Start Date</label>
-                                <input 
-                                    type="date" 
-                                    id="startDate" 
-                                    name="startDate" 
-                                    placeholder="2025-01-01" 
-                                    className="w-3/4" 
+                                <input
+                                    type="date"
+                                    id="startDate"
+                                    name="startDate"
+                                    placeholder="2025-01-01"
+                                    className="w-3/4"
                                     max={today.toISOString().split('T')[0]}
-                                    required 
+                                    required
                                 />
                             </div>
                         </div>
@@ -195,7 +182,7 @@ export default function AddEmployees() {
                     </div>
                     <div className="flex flex-col  gap-4 border-2 border-gray-300 rounded-md p-4 cursor-pointer w-full">
                         <label htmlFor="department" className="block text-sm font-medium">Department</label>
-                        <select id="department" name="department"  required>
+                        <select id="department" name="department" required>
                             <option value="Sales" className="text-black">Sales</option>
                             <option value="Marketing" className="text-black">Marketing</option>
                             <option value="Engineering" className="text-black">Engineering</option>
@@ -204,7 +191,7 @@ export default function AddEmployees() {
                         </select>
                     </div>
                     <button type="submit" disabled={formData.disabled} className="bg-blue-500 hover:bg-blue-700 cursor-pointer text-white px-4 py-2 rounded-md mx-auto">Save</button>
-                </form> 
+                </form>
             </div>
             {formData.error && <p className="text-red-500">{formData.error}</p>}
             {formData.success && isModalOpen && <AddEmployeeModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />}

@@ -10,3 +10,8 @@ export interface Employee {
     department: string;
 }
 
+export interface FormData {
+    disabled: boolean;
+    error: string | null;
+    success: boolean;
+}
