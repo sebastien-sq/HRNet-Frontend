@@ -2,9 +2,13 @@ import { useState } from 'react';
 import { NavLink } from 'react-router'
 import { z } from 'zod'
 import { addEmployee } from '../slices/EmployeeSlice'
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { states } from '../utils/variables'
 import AddEmployeeModal from '../components/addEmployeeModal'
+import type { RootState } from '../store/store'
+import type { Employee } from '../lib/types';
+
+
 // Calculer la date il y a 18 ans
 const eighteenYearsAgo = new Date();
 eighteenYearsAgo.setFullYear(eighteenYearsAgo.getFullYear() - 18);
@@ -12,35 +16,56 @@ eighteenYearsAgo.setFullYear(eighteenYearsAgo.getFullYear() - 18);
 // Calculer la date du jour
 const today = new Date();
 
-
-const employeeSchema = z.object({
-    firstName: z.string().min(2, { message: 'First name is required' }),
-    lastName: z.string().min(2, { message: 'Last name is required' }),
-    dateOfBirth: z.string().min(1, { message: 'Date of Birth is required' }).refine(
-        (val) => {
-            const birthDate = new Date(val);
-            return birthDate <= eighteenYearsAgo;
+// Fonction pour créer le schéma de validation avec les employés existants
+const createEmployeeSchema = (existingEmployees: Employee[]) => {
+    return z.object({
+        firstName: z.string().min(2, { message: 'First name is required' }),
+        lastName: z.string().min(2, { message: 'Last name is required' }),
+        dateOfBirth: z.string().min(1, { message: 'Date of Birth is required' }).refine(
+            (val) => {
+                const birthDate = new Date(val);
+                return birthDate <= eighteenYearsAgo;
+            },
+            { message: 'Employee must be at least 18 years old' }
+        ),
+        startDate: z.string().min(1, { message: 'Start Date is required' }),
+        street: z.string().min(2, { message: 'Street is required' }),
+        city: z.string().min(2, { message: 'City is required' }),
+        state: z.string().refine((val: string) => states.some(state => state.name === val), { message: 'State is required' }),
+        zipCode: z.string().min(5, { message: 'Zip Code is required' }),
+        department: z.string().refine((val: string) => ['Sales', 'Marketing', 'Engineering', 'Human Resources', 'Legal'].includes(val), { message: 'Department is required' }),
+    }).refine(
+        (data) => {
+            // Vérifier que la date de début est après la date de naissance
+            const birthDate = new Date(data.dateOfBirth);
+            const startDate = new Date(data.startDate);
+            return startDate > birthDate;
         },
-        { message: 'Employee must be at least 18 years old' }
-    ),
-    startDate: z.string().min(1, { message: 'Start Date is required' }),
-    street: z.string().min(2, { message: 'Street is required' }),
-    city: z.string().min(2, { message: 'City is required' }),
-    state: z.string().refine((val: string) => states.some(state => state.name === val), { message: 'State is required' }),
-    zipCode: z.string().min(5, { message: 'Zip Code is required' }),
-    department: z.string().refine((val: string) => ['Sales', 'Marketing', 'Engineering', 'Human Resources', 'Legal'].includes(val), { message: 'Department is required' }),
-}).refine(
-    (data) => {
-        // Vérifier que la date de début est après la date de naissance
-        const birthDate = new Date(data.dateOfBirth);
-        const startDate = new Date(data.startDate);
-        return startDate > birthDate;
-    },
-    {
-        message: 'Start date must be after date of birth',
-        path: ['startDate'], // Indique que l'erreur concerne le champ startDate
-    }
-)
+        {
+            message: 'Start date must be after date of birth',
+            path: ['startDate'], // Indique que l'erreur concerne le champ startDate
+        }
+    ).refine(
+        (data) => {
+            // Vérifier que l'employé n'existe pas déjà dans le store
+            return !existingEmployees.some((employee: Employee) => 
+                employee.firstName === data.firstName && 
+                employee.lastName === data.lastName && 
+                employee.dateOfBirth === data.dateOfBirth && 
+                employee.startDate === data.startDate && 
+                employee.street === data.street && 
+                employee.city === data.city && 
+                employee.state === data.state && 
+                employee.zipCode === data.zipCode && 
+                employee.department === data.department
+            );
+        },
+        {
+            message: 'Employee already exists',
+            path: ['firstName'],
+        }
+    );
+}
 
 interface FormData {
     disabled: boolean;
@@ -54,6 +79,7 @@ export default function AddEmployees() {
         error : null,
         success : false,
     });
+    const existingEmployees = useSelector((state: RootState) => state.employees.list) as Employee[];
     const dispatch = useDispatch();
     const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -66,7 +92,11 @@ export default function AddEmployees() {
         e.preventDefault();
         const formData = new FormData(e.target as HTMLFormElement);
         const data = Object.fromEntries(formData);
+        
+        // Créer le schéma de validation avec les employés existants
+        const employeeSchema = createEmployeeSchema(existingEmployees);
         const validatedData = employeeSchema.safeParse(data);
+        
         if (!validatedData.success) {
             console.error(validatedData.error);
             // Récupérer le premier message d'erreur

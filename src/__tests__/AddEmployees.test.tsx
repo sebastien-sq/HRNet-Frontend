@@ -211,7 +211,96 @@ describe('AddEmployees Component', () => {
     });
   });
 
+  test('devrait afficher une erreur si l\'employé existe déjà', async () => {
+    render(
+      <Provider store={store}>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/add" element={<AddEmployees />} />
+            <Route path="/list" element={<ListEmployees />} />
+            <Route path="*" element={<Navigate to="/add" />} />
+          </Routes>
+        </BrowserRouter>
+      </Provider>
+    );
 
+    // Ajouter un premier employé
+    await user.type(screen.getByLabelText(/First Name/i), 'Jean');
+    await user.type(screen.getByLabelText(/Last Name/i), 'Dupont');
+    await user.type(screen.getByLabelText(/Date of Birth/i), '1990-01-15');
+    await user.type(screen.getByLabelText(/Start Date/i), '2024-01-01');
+    await user.type(screen.getByLabelText(/Street/i), '123 Main Street');
+    await user.type(screen.getByLabelText(/City/i), 'Los Angeles');
+    await user.selectOptions(screen.getByLabelText(/State/i), states[5].name);
+    await user.type(screen.getByLabelText(/Zip Code/i), '90001');
+    await user.selectOptions(screen.getByLabelText(/Department/i), 'Sales');
+
+    // Soumettre le premier formulaire
+    await user.click(screen.getByRole('button', { name: /Save/i }));
+
+    // Attendre que le modal s'affiche
+    await waitFor(() => {
+      expect(screen.getByText(/Employee added successfully !/i)).toBeInTheDocument();
+    });
+
+    // Fermer le modal
+    const closeButton = screen.getByRole('button', { name: /X/i });
+    await user.click(closeButton);
+
+    // Attendre que le modal se ferme
+    await waitFor(() => {
+      expect(screen.queryByText(/Employee added successfully !/i)).not.toBeInTheDocument();
+    });
+
+    // Vérifier que l'employé est dans le store
+    const state = store.getState() as RootState;
+    expect((state as RootState).employees.list).toHaveLength(1);
+
+    // Essayer d'ajouter le même employé une deuxième fois
+    // Remplir le formulaire avec les mêmes données
+    const firstNameInput = screen.getByLabelText(/First Name/i) as HTMLInputElement;
+    const lastNameInput = screen.getByLabelText(/Last Name/i) as HTMLInputElement;
+    const dateOfBirthInput = screen.getByLabelText(/Date of Birth/i) as HTMLInputElement;
+    const startDateInput = screen.getByLabelText(/Start Date/i) as HTMLInputElement;
+    const streetInput = screen.getByLabelText(/Street/i) as HTMLInputElement;
+    const cityInput = screen.getByLabelText(/City/i) as HTMLInputElement;
+    const zipCodeInput = screen.getByLabelText(/Zip Code/i) as HTMLInputElement;
+
+    // Vider les champs s'ils sont déjà remplis
+    await user.clear(firstNameInput);
+    await user.clear(lastNameInput);
+    await user.clear(dateOfBirthInput);
+    await user.clear(startDateInput);
+    await user.clear(streetInput);
+    await user.clear(cityInput);
+    await user.clear(zipCodeInput);
+
+    // Remplir avec les mêmes données
+    await user.type(firstNameInput, 'Jean');
+    await user.type(lastNameInput, 'Dupont');
+    await user.type(dateOfBirthInput, '1990-01-15');
+    await user.type(startDateInput, '2024-01-01');
+    await user.type(streetInput, '123 Main Street');
+    await user.type(cityInput, 'Los Angeles');
+    await user.selectOptions(screen.getByLabelText(/State/i), states[5].name);
+    await user.type(zipCodeInput, '90001');
+    await user.selectOptions(screen.getByLabelText(/Department/i), 'Sales');
+
+    // Soumettre le formulaire
+    await user.click(screen.getByRole('button', { name: /Save/i }));
+
+    // Vérifier que le message d'erreur s'affiche
+    await waitFor(() => {
+      expect(screen.getByText(/Employee already exists/i)).toBeInTheDocument();
+    });
+
+    // Vérifier que le modal de succès n'est PAS affiché
+    expect(screen.queryByText(/Employee added successfully !/i)).not.toBeInTheDocument();
+
+    // Vérifier que l'employé n'a pas été ajouté une deuxième fois dans le store
+    const finalState = store.getState() as RootState;
+    expect((finalState as RootState).employees.list).toHaveLength(1);
+  });
 
   test('devrait afficher une erreur si la date de début est avant la date de naissance', async () => {
     render(
