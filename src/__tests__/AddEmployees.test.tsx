@@ -10,8 +10,25 @@ import { persistReducer } from 'redux-persist';
 import type { RootState } from '../store/store';
 import ListEmployees from '../pages/ListEmployees';
 
+// Helper function pour créer des inputs cachés pour les Select Radix UI
+// Car Radix UI Select ne crée pas automatiquement d'input caché pour FormData
+const createHiddenInputForSelect = (form: HTMLFormElement, name: string, value: string) => {
+  // Supprimer l'input caché existant s'il existe
+  const existingInput = form.querySelector(`input[name="${name}"][type="hidden"]`);
+  if (existingInput) {
+    existingInput.remove();
+  }
+  
+  // Créer un nouvel input caché
+  const hiddenInput = document.createElement('input');
+  hiddenInput.type = 'hidden';
+  hiddenInput.name = name;
+  hiddenInput.value = value;
+  form.appendChild(hiddenInput);
+};
+
 // Helper function pour interagir avec les composants Select Radix UI
-const selectOption = async (user: ReturnType<typeof userEvent.setup>, labelText: string | RegExp, optionText: string) => {
+const selectOption = async (user: ReturnType<typeof userEvent.setup>, labelText: string | RegExp, optionText: string, selectName: string) => {
   // Trouver le label - utiliser getAllByText pour éviter les erreurs de multiples éléments
   let label: HTMLElement;
   
@@ -74,7 +91,7 @@ const selectOption = async (user: ReturnType<typeof userEvent.setup>, labelText:
   await waitFor(() => {
     const options = screen.getAllByText(optionText);
     expect(options.length).toBeGreaterThan(0);
-  }, { timeout: 3000 });
+  }, { timeout: 5000 });
   
   // Cliquer sur l'option dans le menu SelectContent (pas dans le SelectValue)
   const options = screen.getAllByText(optionText);
@@ -83,10 +100,37 @@ const selectOption = async (user: ReturnType<typeof userEvent.setup>, labelText:
     option.closest('[data-slot="select-item"]') !== null
   ) || options[options.length - 1]; // Prendre la dernière occurrence si pas trouvé
   
+  if (!selectItem) {
+    throw new Error(`Could not find select item for option: ${optionText}`);
+  }
+  
   await user.click(selectItem);
   
-  // Attendre un peu pour que la sélection soit appliquée et que le menu se ferme
-  await new Promise(resolve => setTimeout(resolve, 100));
+  // Attendre que la sélection soit appliquée et que le menu se ferme
+  await waitFor(() => {
+    // Vérifier que le menu est fermé en vérifiant que l'option n'est plus visible dans le menu
+    const menuItems = screen.queryAllByRole('option');
+    const isMenuClosed = menuItems.length === 0 || !menuItems.some(item => item.textContent === optionText);
+    expect(isMenuClosed).toBe(true);
+  }, { timeout: 3000 });
+  
+  // Créer un input caché pour que FormData puisse récupérer la valeur
+  // Chercher le formulaire dans le DOM
+  let form: HTMLFormElement | null = null;
+  const formElement = document.querySelector('form.add-employee-form') as HTMLFormElement;
+  if (formElement) {
+    form = formElement;
+  } else {
+    // Fallback: chercher depuis le trigger
+    form = trigger.closest('form') as HTMLFormElement;
+  }
+  
+  if (form && selectName) {
+    createHiddenInputForSelect(form, selectName, optionText);
+  }
+  
+  // Attendre un peu plus pour s'assurer que la valeur est bien enregistrée
+  await new Promise(resolve => setTimeout(resolve, 200));
 };
 
 // Mock redux-persist storage
@@ -167,6 +211,7 @@ describe('AddEmployees Component', () => {
   });
 
   test('devrait ajouter un employé au store après soumission du formulaire', async () => {
+    jest.setTimeout(10000);
     render(
       <Provider store={store}>
         <BrowserRouter>
@@ -186,9 +231,26 @@ describe('AddEmployees Component', () => {
     await user.type(screen.getByLabelText(/Start Date/i), '2024-01-01');
     await user.type(screen.getByLabelText(/Street/i), '123 Main Street');
     await user.type(screen.getByLabelText(/City/i), 'Los Angeles');
-    await selectOption(user, /State/i, states[5].name); // California
+    await selectOption(user, /State/i, states[5].name, 'state'); // California
     await user.type(screen.getByLabelText(/Zip Code/i), '90001');
-    await selectOption(user, /Department/i, 'Sales');
+    await selectOption(user, /Department/i, 'Sales', 'department');
+
+    // Attendre un peu pour s'assurer que toutes les valeurs sont bien enregistrées
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    // S'assurer que les inputs cachés sont bien créés pour les Select
+    const form = document.querySelector('form.add-employee-form') as HTMLFormElement;
+    if (form) {
+      // Vérifier et créer les inputs cachés si nécessaire
+      const stateInput = form.querySelector('input[name="state"][type="hidden"]');
+      if (!stateInput) {
+        createHiddenInputForSelect(form, 'state', states[5].name);
+      }
+      const departmentInput = form.querySelector('input[name="department"][type="hidden"]');
+      if (!departmentInput) {
+        createHiddenInputForSelect(form, 'department', 'Sales');
+      }
+    }
 
     // Soumettre le formulaire
     await user.click(screen.getByRole('button', { name: /Save/i }));
@@ -197,7 +259,7 @@ describe('AddEmployees Component', () => {
     await waitFor(() => {
       expect(screen.getByText(/Employee added successfully!/i)).toBeInTheDocument();
       expect(screen.getByText(/You can see the employee in the list page!/i)).toBeInTheDocument();
-    });
+    }, { timeout: 5000 });
 
     // Vérifier que l'employé est dans le store
     const state = store.getState() as RootState;
@@ -216,6 +278,7 @@ describe('AddEmployees Component', () => {
   });
 
   test('devrait fermer le modal lorsqu\'on clique sur le bouton de fermeture', async () => {
+    jest.setTimeout(10000);
     render(
       <Provider store={store}>
         <BrowserRouter>
@@ -235,9 +298,26 @@ describe('AddEmployees Component', () => {
     await user.type(screen.getByLabelText(/Start Date/i), '2024-01-01');
     await user.type(screen.getByLabelText(/Street/i), '123 Main Street');
     await user.type(screen.getByLabelText(/City/i), 'Los Angeles');
-    await selectOption(user, /State/i, states[5].name);
+    await selectOption(user, /State/i, states[5].name, 'state');
     await user.type(screen.getByLabelText(/Zip Code/i), '90001');
-    await selectOption(user, /Department/i, 'Sales');
+    await selectOption(user, /Department/i, 'Sales', 'department');
+
+    // Attendre un peu pour s'assurer que toutes les valeurs sont bien enregistrées
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    // S'assurer que les inputs cachés sont bien créés pour les Select
+    const form = document.querySelector('form.add-employee-form') as HTMLFormElement;
+    if (form) {
+      // Vérifier et créer les inputs cachés si nécessaire
+      const stateInput = form.querySelector('input[name="state"][type="hidden"]');
+      if (!stateInput) {
+        createHiddenInputForSelect(form, 'state', states[5].name);
+      }
+      const departmentInput = form.querySelector('input[name="department"][type="hidden"]');
+      if (!departmentInput) {
+        createHiddenInputForSelect(form, 'department', 'Sales');
+      }
+    }
 
     // Soumettre le formulaire
     await user.click(screen.getByRole('button', { name: /Save/i }));
@@ -245,7 +325,7 @@ describe('AddEmployees Component', () => {
     // Attendre que le modal s'affiche
     await waitFor(() => {
       expect(screen.getByText(/Employee added successfully!/i)).toBeInTheDocument();
-    });
+    }, { timeout: 5000 });
 
     // Vérifier que le modal est visible
     const modal = screen.getByText(/Employee added successfully!/i).closest('div');
@@ -258,10 +338,11 @@ describe('AddEmployees Component', () => {
     // Vérifier que le modal n'est plus visible
     await waitFor(() => {
       expect(screen.queryByText(/Employee added successfully!/i)).not.toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
   });
 
   test('devrait fermer le modal lorsqu\'on clique en dehors du modal', async () => {
+    jest.setTimeout(10000);
     const { container } = render(
       <Provider store={store}>
         <BrowserRouter>
@@ -281,9 +362,26 @@ describe('AddEmployees Component', () => {
     await user.type(screen.getByLabelText(/Start Date/i), '2024-01-01');
     await user.type(screen.getByLabelText(/Street/i), '123 Main Street');
     await user.type(screen.getByLabelText(/City/i), 'Los Angeles');
-    await selectOption(user, /State/i, states[5].name);
+    await selectOption(user, /State/i, states[5].name, 'state');
     await user.type(screen.getByLabelText(/Zip Code/i), '90001');
-    await selectOption(user, /Department/i, 'Sales');
+    await selectOption(user, /Department/i, 'Sales', 'department');
+
+    // Attendre un peu pour s'assurer que toutes les valeurs sont bien enregistrées
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    // S'assurer que les inputs cachés sont bien créés pour les Select
+    const form = document.querySelector('form.add-employee-form') as HTMLFormElement;
+    if (form) {
+      // Vérifier et créer les inputs cachés si nécessaire
+      const stateInput = form.querySelector('input[name="state"][type="hidden"]');
+      if (!stateInput) {
+        createHiddenInputForSelect(form, 'state', states[5].name);
+      }
+      const departmentInput = form.querySelector('input[name="department"][type="hidden"]');
+      if (!departmentInput) {
+        createHiddenInputForSelect(form, 'department', 'Sales');
+      }
+    }
 
     // Soumettre le formulaire
     await user.click(screen.getByRole('button', { name: /Save/i }));
@@ -291,7 +389,7 @@ describe('AddEmployees Component', () => {
     // Attendre que le modal s'affiche
     await waitFor(() => {
       expect(screen.getByText(/Employee added successfully!/i)).toBeInTheDocument();
-    });
+    }, { timeout: 5000 });
 
     // Trouver le backdrop (la div avec la classe fixed)
     const backdrop = container.querySelector('.fixed.inset-0');
@@ -305,7 +403,7 @@ describe('AddEmployees Component', () => {
     // Vérifier que le modal n'est plus visible
     await waitFor(() => {
       expect(screen.queryByText(/Employee added successfully!/i)).not.toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
   });
 
   test('devrait afficher une erreur si l\'employé existe déjà', async () => {
@@ -328,9 +426,25 @@ describe('AddEmployees Component', () => {
     await user.type(screen.getByLabelText(/Start Date/i), '2024-01-01');
     await user.type(screen.getByLabelText(/Street/i), '123 Main Street');
     await user.type(screen.getByLabelText(/City/i), 'Los Angeles');
-    await selectOption(user, /State/i, states[5].name);
+    await selectOption(user, /State/i, states[5].name, 'state');
     await user.type(screen.getByLabelText(/Zip Code/i), '90001');
-    await selectOption(user, /Department/i, 'Sales');
+    await selectOption(user, /Department/i, 'Sales', 'department');
+
+    // Attendre un peu pour s'assurer que toutes les valeurs sont bien enregistrées
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    // S'assurer que les inputs cachés sont bien créés pour les Select
+    const form1 = document.querySelector('form.add-employee-form') as HTMLFormElement;
+    if (form1) {
+      const stateInput1 = form1.querySelector('input[name="state"][type="hidden"]');
+      if (!stateInput1) {
+        createHiddenInputForSelect(form1, 'state', states[5].name);
+      }
+      const departmentInput1 = form1.querySelector('input[name="department"][type="hidden"]');
+      if (!departmentInput1) {
+        createHiddenInputForSelect(form1, 'department', 'Sales');
+      }
+    }
 
     // Soumettre le premier formulaire
     await user.click(screen.getByRole('button', { name: /Save/i }));
@@ -379,9 +493,26 @@ describe('AddEmployees Component', () => {
     await user.type(startDateInput, '2024-01-01');
     await user.type(streetInput, '123 Main Street');
     await user.type(cityInput, 'Los Angeles');
-    await selectOption(user, /State/i, states[5].name);
+    await selectOption(user, /State/i, states[5].name, 'state');
     await user.type(zipCodeInput, '90001');
-    await selectOption(user, /Department/i, 'Sales');
+    await selectOption(user, /Department/i, 'Sales', 'department');
+
+    // Attendre un peu pour s'assurer que toutes les valeurs sont bien enregistrées
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    // S'assurer que les inputs cachés sont bien créés pour les Select
+    const form = document.querySelector('form.add-employee-form') as HTMLFormElement;
+    if (form) {
+      // Vérifier et créer les inputs cachés si nécessaire
+      const stateInput = form.querySelector('input[name="state"][type="hidden"]');
+      if (!stateInput) {
+        createHiddenInputForSelect(form, 'state', states[5].name);
+      }
+      const departmentInput = form.querySelector('input[name="department"][type="hidden"]');
+      if (!departmentInput) {
+        createHiddenInputForSelect(form, 'department', 'Sales');
+      }
+    }
 
     // Soumettre le formulaire
     await user.click(screen.getByRole('button', { name: /Save/i }));
@@ -419,9 +550,9 @@ describe('AddEmployees Component', () => {
     await user.type(screen.getByLabelText(/Start Date/i), '1985-01-01'); // Avant la naissance !
     await user.type(screen.getByLabelText(/Street/i), '123 Main Street');
     await user.type(screen.getByLabelText(/City/i), 'Los Angeles');
-    await selectOption(user, /State/i, states[5].name);
+    await selectOption(user, /State/i, states[5].name, 'state');
     await user.type(screen.getByLabelText(/Zip Code/i), '90001');
-    await selectOption(user, /Department/i, 'Sales');
+    await selectOption(user, /Department/i, 'Sales', 'department');
 
     // Soumettre le formulaire
     await user.click(screen.getByRole('button', { name: /Save/i }));

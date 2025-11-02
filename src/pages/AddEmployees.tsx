@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { addEmployee } from '../slices/EmployeeSlice'
 import { useDispatch, useSelector } from 'react-redux'
 import { departments, states } from '../utils/variables'
-import Modal from '../components/modal'
+import SimpleModal from '@sebastien-sq/react-simple-modal'
 import type { RootState } from '../store/store'
 import type { Employee, FormData } from '../lib/types';
 import { Button } from '@/components/ui/button'
@@ -204,7 +204,7 @@ export default function AddEmployees() {
                 </form>
             </div>
             {formData.error && <p className="text-red-500">{formData.error}</p>}
-            {formData.success && <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Employee added successfully !" message="You can see the employee in the list page !" type="success" />}
+            {formData.success && <SimpleModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Employee added successfully !" message="You can see the employee in the list page !" type="success" />}
         </main>
     )
 }
