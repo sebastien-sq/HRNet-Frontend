@@ -7,6 +7,7 @@ import { states } from '../utils/variables'
 import AddEmployeeModal from '../components/addEmployeeModal'
 import type { RootState } from '../store/store'
 import type { Employee, FormData } from '../lib/types';
+import { Button } from '@/components/ui/button'
 
 
 // Zod schema & date checks
@@ -190,7 +191,7 @@ export default function AddEmployees() {
                             <option value="Legal" className="text-black">Legal</option>
                         </select>
                     </div>
-                    <button type="submit" disabled={formData.disabled} className="bg-blue-500 hover:bg-blue-700 cursor-pointer text-white px-4 py-2 rounded-md mx-auto">Save</button>
+                    <Button type="submit" disabled={formData.disabled} className="bg-blue-500 hover:bg-blue-700 cursor-pointer text-white px-4 py-2 rounded-md mx-auto">Save</Button>
                 </form>
             </div>
             {formData.error && <p className="text-red-500">{formData.error}</p>}
