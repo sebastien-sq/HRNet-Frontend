@@ -9,3 +9,4 @@ export interface Employee {
     zipCode: string;
     department: string;
 }
+

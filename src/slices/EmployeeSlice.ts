@@ -1,20 +1,29 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { Employee } from '../lib/types'
 
-const initialState: Employee[] = []
+interface EmployeesState {
+    list: Employee[]
+}
+
+const initialState: EmployeesState = {
+    list: []
+}
 
 const employeesSlice = createSlice({
     name: 'employees',
     initialState,
     reducers: {
         addEmployee: (state, action: PayloadAction<Employee>) => {
-            state.push(action.payload)
+            // Ajouter le nouvel employé au tableau existant
+            state.list.push({
+                ...action.payload,
+            })
         },
         filterEmployees: (state, action: PayloadAction<{ type: 'firstName' | 'lastName' | 'department', value: string }>) => {
-            return state.filter(employee => employee[action.payload.type].toLowerCase().includes(action.payload.value.toLowerCase()))
+            state.list = state.list.filter(employee => employee[action.payload.type].toLowerCase().includes(action.payload.value.toLowerCase()))
         },
         sortEmployees: (state, action: PayloadAction<{ type: 'firstName' | 'lastName' | 'department', value: 'asc' | 'desc' }>) => {
-            return state.sort((a, b) => {
+            state.list.sort((a, b) => {
                 if (action.payload.value === 'asc') {
                     return a[action.payload.type].localeCompare(b[action.payload.type] as string)
                 } else {
@@ -25,5 +34,5 @@ const employeesSlice = createSlice({
     }
 })
 
-export const { addEmployee } = employeesSlice.actions
+export const { addEmployee, filterEmployees, sortEmployees } = employeesSlice.actions
 export default employeesSlice.reducer

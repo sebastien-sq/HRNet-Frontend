@@ -1,13 +1,27 @@
 import { configureStore } from '@reduxjs/toolkit'
 import employeesReducer from '../slices/EmployeeSlice'
+import { persistStore, persistReducer } from 'redux-persist'
+import storage from 'redux-persist/lib/storage'
+
+const persistConfig = {
+  key: 'employees',
+  storage,
+}
+const persistedReducer = persistReducer(persistConfig, employeesReducer)
 
 export const store = configureStore({
   reducer: {
-    employees: employeesReducer,
+    employees: persistedReducer,
   },
+  middleware: (getDefaultMiddleware) => getDefaultMiddleware({
+  serializableCheck: {
+    ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
+    ignoredPaths: ['employees._persist'],
+  },
+}),
+  devTools: import.meta.env.ENVIRONMENT === 'development',
 })
+export const persistor = persistStore(store)
 
-// Infer the `RootState` and `AppDispatch` types from the store itself
 export type RootState = ReturnType<typeof store.getState>
-// Inferred type: {posts: PostsState, comments: CommentsState, users: UsersState}
 export type AppDispatch = typeof store.dispatch 
