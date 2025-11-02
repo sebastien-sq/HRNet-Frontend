@@ -3,42 +3,25 @@
 import type { ColumnDef } from "@tanstack/react-table"
 import type { Employee } from '@/lib/types'
 import { format } from 'date-fns/format'
-import { Button } from "@/components/ui/button"
-import { ChevronUp } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { DataTableColumnHeader } from "./data-table-column-header"
 
 export const columns: ColumnDef<Employee>[] = [
     {
         accessorKey: "firstName",
         header: ({ column }) => {
-            return <div className="flex items-center gap-2">
-                First Name
-                <Button variant="ghost" size="sm" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-                    <ChevronUp className={cn("size-4", column.getIsSorted() === "asc" ? "rotate-180" : "")} />
-                </Button>
-            </div>
+            return <DataTableColumnHeader column={column} title="First Name" />
         },
     },
     {
         accessorKey: "lastName",
         header: ({ column }) => {
-            return <div className="flex items-center gap-2">
-                Last Name
-                <Button variant="ghost" size="sm" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-                    <ChevronUp className={cn("size-4", column.getIsSorted() === "asc" ? "rotate-180" : "")} />
-                </Button>
-            </div>
+                return <DataTableColumnHeader column={column} title="Last Name" />
         },
     },
     {
         accessorKey: "startDate",
         header: ({ column }) => {
-            return <div className="flex items-center gap-2">
-                Start Date
-                <Button variant="ghost" size="sm" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-                    <ChevronUp className={cn("size-4", column.getIsSorted() === "asc" ? "rotate-180" : "")} />
-                </Button>
-            </div>
+            return <DataTableColumnHeader column={column} title="Start Date" />
         },
         cell: ({ row }) => {
             return <div>{format(new Date(row.original.startDate), 'dd/MM/yyyy')}</div>
@@ -47,23 +30,13 @@ export const columns: ColumnDef<Employee>[] = [
     {
         accessorKey: "department",
         header: ({ column }) => {
-            return <div className="flex items-center gap-2">
-                Department
-                <Button variant="ghost" size="sm" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-                    <ChevronUp className={cn("size-4", column.getIsSorted() === "asc" ? "rotate-180" : "")} />
-                </Button>
-            </div>
+            return <DataTableColumnHeader column={column} title="Department" />
         },
     },
     {
         accessorKey: "dateOfBirth",
         header: ({ column }) => {
-            return <div className="flex items-center gap-2">
-                Date of Birth
-                <Button variant="ghost" size="sm" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-                    <ChevronUp className={cn("size-4", column.getIsSorted() === "asc" ? "rotate-180" : "")} />
-                </Button>
-            </div>
+            return <DataTableColumnHeader column={column} title="Date of Birth" />
         },
         cell: ({ row }) => {
             return <div>{format(new Date(row.original.dateOfBirth), 'dd/MM/yyyy')}</div>
@@ -72,45 +45,25 @@ export const columns: ColumnDef<Employee>[] = [
     {
         accessorKey: "street",
         header: ({ column }) => {
-            return <div className="flex items-center gap-2">
-                Street
-                <Button variant="ghost" size="sm" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-                    <ChevronUp className={cn("size-4", column.getIsSorted() === "asc" ? "rotate-180" : "")} />
-                </Button>
-            </div>
+            return <DataTableColumnHeader column={column} title="Street" />
         },
     },
     {
         accessorKey: "city",
         header: ({ column }) => {
-            return <div className="flex items-center gap-2">
-                City
-                <Button variant="ghost" size="sm" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-                    <ChevronUp className={cn("size-4", column.getIsSorted() === "asc" ? "rotate-180" : "")} />
-                </Button>
-            </div>
+            return <DataTableColumnHeader column={column} title="City" />
         },
     },
     {
         accessorKey: "state",
         header: ({ column }) => {
-            return <div className="flex items-center gap-2">
-                State
-                <Button variant="ghost" size="sm" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-                    <ChevronUp className={cn("size-4", column.getIsSorted() === "asc" ? "rotate-180" : "")} />
-                </Button>
-            </div>
+            return <DataTableColumnHeader column={column} title="State" />
         },
     },
     {
         accessorKey: "zipCode",
         header: ({ column }) => {
-            return <div className="flex items-center gap-2">
-                Zip Code
-                <Button variant="ghost" size="sm" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-                    <ChevronUp className={cn("size-4", column.getIsSorted() === "asc" ? "rotate-180" : "")} />
-                </Button>
-            </div>
+            return <DataTableColumnHeader column={column} title="Zip Code" />
         },
     }
 ]

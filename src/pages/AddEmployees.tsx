@@ -3,11 +3,12 @@ import { NavLink } from 'react-router'
 import { z } from 'zod'
 import { addEmployee } from '../slices/EmployeeSlice'
 import { useDispatch, useSelector } from 'react-redux'
-import { states } from '../utils/variables'
+import { departments, states } from '../utils/variables'
 import AddEmployeeModal from '../components/addEmployeeModal'
 import type { RootState } from '../store/store'
 import type { Employee, FormData } from '../lib/types';
 import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 // Zod schema & date checks
@@ -169,11 +170,16 @@ export default function AddEmployees() {
                         <div className="flex">
                             <div className="flex flex-col w-1/2">
                                 <label htmlFor="state" className="block text-sm font-medium">State</label>
-                                <select id="state" name="state" className="text-white" required>
-                                    {states.map((state) => (
-                                        <option value={state.name} className="text-black" key={state.name}>{state.name}</option>
-                                    ))}
-                                </select>
+                                <Select name="state" required>
+                                    <SelectTrigger className="w-3/4 border-none cursor-pointer">
+                                        <SelectValue placeholder="Select a state" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-white text-black w-3/4">
+                                        {states.map((state) => (
+                                            <SelectItem value={state.name} className="text-black cursor-pointer hover:bg-gray-100" key={state.name}>{state.name}</SelectItem>
+                                        ))}   
+                                    </SelectContent>
+                                </Select>
                             </div>
                             <div className="flex flex-col w-1/2">
                                 <label htmlFor="zipCode" className="block text-sm font-medium">Zip Code</label>
@@ -183,15 +189,18 @@ export default function AddEmployees() {
                     </div>
                     <div className="flex flex-col  gap-4 border-2 border-gray-300 rounded-md p-4 cursor-pointer w-full">
                         <label htmlFor="department" className="block text-sm font-medium">Department</label>
-                        <select id="department" name="department" required>
-                            <option value="Sales" className="text-black">Sales</option>
-                            <option value="Marketing" className="text-black">Marketing</option>
-                            <option value="Engineering" className="text-black">Engineering</option>
-                            <option value="Human Resources" className="text-black">Human Resources</option>
-                            <option value="Legal" className="text-black">Legal</option>
-                        </select>
+                        <Select name="department" required>
+                            <SelectTrigger className="w-full border-none cursor-pointer">
+                                <SelectValue placeholder="Select a department" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-white text-black">
+                                {departments.map((department: string) => (
+                                    <SelectItem value={department} className="text-black cursor-pointer hover:bg-gray-100" key={department}>{department}</SelectItem>
+                                ))} 
+                            </SelectContent>
+                        </Select>
                     </div>
-                    <Button type="submit" disabled={formData.disabled} className="bg-blue-500 hover:bg-blue-700 cursor-pointer text-white px-4 py-2 rounded-md mx-auto">Save</Button>
+                    <Button type="submit" disabled={formData.disabled} variant="outline" className="cursor-pointer hover:bg-blue-700 text-white px-4 py-2 rounded-md mx-auto">Save</Button>
                 </form>
             </div>
             {formData.error && <p className="text-red-500">{formData.error}</p>}

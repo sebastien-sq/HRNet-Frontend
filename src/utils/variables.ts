@@ -236,3 +236,23 @@ export const states = [
         "abbreviation": "WY"
     }
 ];
+
+export const filters = [
+    { name: "First Name", key: "firstName" },
+    { name: "Last Name", key: "lastName" },
+    { name: "Department", key: "department" },
+    { name: "Start Date", key: "startDate" },
+    { name: "Date of Birth", key: "dateOfBirth" },
+    { name: "Street", key: "street" },
+    { name: "City", key: "city" },
+    { name: "State", key: "state" },
+    { name: "Zip Code", key: "zipCode" }
+]
+
+export const departments = [
+    "Sales",
+    "Marketing",
+    "Engineering",
+    "Human Resources",
+    "Legal"
+]
