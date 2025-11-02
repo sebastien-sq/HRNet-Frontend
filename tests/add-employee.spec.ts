@@ -42,8 +42,8 @@ test.describe('Ajout d\'un employé', () => {
       form.requestSubmit();
     });
 
-    // Attendre que le message de succès apparaisse
-    await expect(page.locator('text=Employee added successfully')).toBeVisible({ timeout: 10000 });
+    // Attendre que le modal de succès apparaisse
+    await expect(page.locator('text=Employee added successfully !')).toBeVisible({ timeout: 10000 });
 
     // Vérifier que les données sont dans le localStorage (Redux persist)
     const persistedData = await page.evaluate(() => {
@@ -121,7 +121,7 @@ test.describe('Ajout d\'un employé', () => {
     await page.locator('form').evaluate((form: HTMLFormElement) => {
       form.requestSubmit();
     });
-    await expect(page.locator('text=Employee added successfully')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('text=Employee added successfully !')).toBeVisible({ timeout: 10000 });
 
     // Attendre un peu pour que le state soit persisté et que le formulaire soit prêt
     await page.waitForTimeout(1000);
@@ -143,7 +143,7 @@ test.describe('Ajout d\'un employé', () => {
     await page.locator('form').evaluate((form: HTMLFormElement) => {
       form.requestSubmit();
     });
-    await expect(page.locator('text=Employee added successfully')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('text=Employee added successfully !')).toBeVisible({ timeout: 10000 });
 
     // Vérifier que les deux employés sont dans le localStorage
     const persistedData = await page.evaluate(() => {
@@ -185,7 +185,7 @@ test.describe('Ajout d\'un employé', () => {
     await page.locator('form').evaluate((form: HTMLFormElement) => {
       form.requestSubmit();
     });
-    await expect(page.locator('text=Employee added successfully')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('text=Employee added successfully !')).toBeVisible({ timeout: 10000 });
 
     // Recharger la page
     await page.reload();

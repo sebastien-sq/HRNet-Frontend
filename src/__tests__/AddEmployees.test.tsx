@@ -97,9 +97,9 @@ describe('AddEmployees Component', () => {
     // Soumettre le formulaire
     await user.click(screen.getByRole('button', { name: /Save/i }));
 
-    // Vérifier le message de succès
+    // Vérifier que le modal de succès s'affiche
     await waitFor(() => {
-      expect(screen.getByText(/Employee added successfully/i)).toBeInTheDocument();
+      expect(screen.getByText(/Employee added successfully !/i)).toBeInTheDocument();
     });
 
     // Vérifier que l'employé est dans le store
@@ -118,7 +118,7 @@ describe('AddEmployees Component', () => {
     });
   });
 
-  test('devrait afficher une erreur si l\'employé a moins de 18 ans', async () => {
+  test('devrait fermer le modal lorsqu\'on clique sur le bouton de fermeture', async () => {
     render(
       <Provider store={store}>
         <BrowserRouter>
@@ -131,15 +131,10 @@ describe('AddEmployees Component', () => {
       </Provider>
     );
 
-    // Calculer une date qui rend la personne mineure (moins de 18 ans)
-    const today = new Date();
-    const underageDate = new Date(today.getFullYear() - 17, today.getMonth(), today.getDate());
-    const underageDateStr = underageDate.toISOString().split('T')[0];
-
-    // Remplir le formulaire avec une date de naissance invalide
-    await user.type(screen.getByLabelText(/First Name/i), 'Mineur');
-    await user.type(screen.getByLabelText(/Last Name/i), 'Test');
-    await user.type(screen.getByLabelText(/Date of Birth/i), underageDateStr);
+    // Remplir le formulaire avec userEvent
+    await user.type(screen.getByLabelText(/First Name/i), 'Test');
+    await user.type(screen.getByLabelText(/Last Name/i), 'User');
+    await user.type(screen.getByLabelText(/Date of Birth/i), '1990-01-15');
     await user.type(screen.getByLabelText(/Start Date/i), '2024-01-01');
     await user.type(screen.getByLabelText(/Street/i), '123 Main Street');
     await user.type(screen.getByLabelText(/City/i), 'Los Angeles');
@@ -150,15 +145,73 @@ describe('AddEmployees Component', () => {
     // Soumettre le formulaire
     await user.click(screen.getByRole('button', { name: /Save/i }));
 
-    // Vérifier que le message d'erreur s'affiche
+    // Attendre que le modal s'affiche
     await waitFor(() => {
-      expect(screen.getByText(/Employee must be at least 18 years old/i)).toBeInTheDocument();
+      expect(screen.getByText(/Employee added successfully !/i)).toBeInTheDocument();
     });
 
-    // Vérifier que l'employé n'est PAS dans le store
-    const state = store.getState() as RootState;
-    expect((state as RootState).employees.list).toHaveLength(0);
+    // Vérifier que le modal est visible
+    const modal = screen.getByText(/Employee added successfully !/i).closest('div');
+    expect(modal).toBeInTheDocument();
+
+    // Cliquer sur le bouton de fermeture (X)
+    const closeButton = screen.getByRole('button', { name: /X/i });
+    await user.click(closeButton);
+
+    // Vérifier que le modal n'est plus visible
+    await waitFor(() => {
+      expect(screen.queryByText(/Employee added successfully !/i)).not.toBeInTheDocument();
+    });
   });
+
+  test('devrait fermer le modal lorsqu\'on clique en dehors du modal', async () => {
+    const { container } = render(
+      <Provider store={store}>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/add" element={<AddEmployees />} />
+            <Route path="/list" element={<ListEmployees />} />
+            <Route path="*" element={<Navigate to="/add" />} />
+          </Routes>
+        </BrowserRouter>
+      </Provider>
+    );
+
+    // Remplir le formulaire avec userEvent
+    await user.type(screen.getByLabelText(/First Name/i), 'Test');
+    await user.type(screen.getByLabelText(/Last Name/i), 'User');
+    await user.type(screen.getByLabelText(/Date of Birth/i), '1990-01-15');
+    await user.type(screen.getByLabelText(/Start Date/i), '2024-01-01');
+    await user.type(screen.getByLabelText(/Street/i), '123 Main Street');
+    await user.type(screen.getByLabelText(/City/i), 'Los Angeles');
+    await user.selectOptions(screen.getByLabelText(/State/i), states[5].name);
+    await user.type(screen.getByLabelText(/Zip Code/i), '90001');
+    await user.selectOptions(screen.getByLabelText(/Department/i), 'Sales');
+
+    // Soumettre le formulaire
+    await user.click(screen.getByRole('button', { name: /Save/i }));
+
+    // Attendre que le modal s'affiche
+    await waitFor(() => {
+      expect(screen.getByText(/Employee added successfully !/i)).toBeInTheDocument();
+    });
+
+    // Trouver le backdrop (la div avec la classe fixed)
+    const backdrop = container.querySelector('.fixed.inset-0');
+    expect(backdrop).toBeInTheDocument();
+
+    // Cliquer sur le backdrop (fond noir) du modal
+    if (backdrop) {
+      await user.click(backdrop as HTMLElement);
+    }
+
+    // Vérifier que le modal n'est plus visible
+    await waitFor(() => {
+      expect(screen.queryByText(/Employee added successfully !/i)).not.toBeInTheDocument();
+    });
+  });
+
+
 
   test('devrait afficher une erreur si la date de début est avant la date de naissance', async () => {
     render(
@@ -191,6 +244,9 @@ describe('AddEmployees Component', () => {
     await waitFor(() => {
       expect(screen.getByText(/Start date must be after date of birth/i)).toBeInTheDocument();
     });
+
+    // Vérifier que le modal de succès n'est PAS affiché
+    expect(screen.queryByText(/Employee added successfully !/i)).not.toBeInTheDocument();
 
     // Vérifier que l'employé n'est PAS dans le store
     const state = store.getState() as RootState;

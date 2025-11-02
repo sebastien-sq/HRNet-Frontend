@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { addEmployee } from '../slices/EmployeeSlice'
 import { useDispatch } from 'react-redux'
 import { states } from '../utils/variables'
-
+import AddEmployeeModal from '../components/addEmployeeModal'
 // Calculer la date il y a 18 ans
 const eighteenYearsAgo = new Date();
 eighteenYearsAgo.setFullYear(eighteenYearsAgo.getFullYear() - 18);
@@ -55,6 +55,7 @@ export default function AddEmployees() {
         success : false,
     });
     const dispatch = useDispatch();
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
        setFormData({
@@ -83,9 +84,11 @@ export default function AddEmployees() {
         }));
         setFormData({
             disabled: false,
-            error: null,
-            success: true,
-        });
+                error: null,
+                success: true,
+            });
+            setIsModalOpen(true);
+        
     }
     return (
         <main className="flex flex-col gap-4 justify-center items-center p-4 max-w-screen max-h-screen">
@@ -174,7 +177,7 @@ export default function AddEmployees() {
                 </form> 
             </div>
             {formData.error && <p className="text-red-500">{formData.error}</p>}
-            {formData.success && <p className="text-green-500">Employee added successfully</p>}
+            {formData.success && isModalOpen && <AddEmployeeModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />}
         </main>
     )
 }
