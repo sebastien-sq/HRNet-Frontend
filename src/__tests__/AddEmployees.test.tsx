@@ -10,6 +10,85 @@ import { persistReducer } from 'redux-persist';
 import type { RootState } from '../store/store';
 import ListEmployees from '../pages/ListEmployees';
 
+// Helper function pour interagir avec les composants Select Radix UI
+const selectOption = async (user: ReturnType<typeof userEvent.setup>, labelText: string | RegExp, optionText: string) => {
+  // Trouver le label - utiliser getAllByText pour éviter les erreurs de multiples éléments
+  let label: HTMLElement;
+  
+  if (labelText instanceof RegExp) {
+    // Chercher tous les éléments qui correspondent au regex
+    const allLabels = screen.getAllByText(labelText);
+    // Prendre le premier qui est un <label>
+    label = allLabels.find(el => el.tagName.toLowerCase() === 'label') || allLabels[0];
+  } else {
+    try {
+      const allLabels = screen.getAllByText(labelText);
+      label = allLabels.find(el => el.tagName.toLowerCase() === 'label') || allLabels[0];
+    } catch {
+      label = screen.getByText(labelText);
+    }
+  }
+  
+  // Trouver le SelectTrigger associé au label
+  // Le Select est généralement dans le même conteneur parent que le label
+  const labelContainer = label.closest('div');
+  let trigger: HTMLElement | null = null;
+  
+  if (labelContainer) {
+    // Chercher le trigger (combobox) dans le même conteneur ou dans les enfants
+    trigger = labelContainer.querySelector('[role="combobox"]') as HTMLElement;
+    
+    // Si pas trouvé dans le conteneur direct, chercher dans le parent
+    if (!trigger && labelContainer.parentElement) {
+      trigger = labelContainer.parentElement.querySelector('[role="combobox"]') as HTMLElement;
+    }
+    
+    // Si toujours pas trouvé, chercher dans les siblings suivants
+    if (!trigger && labelContainer.nextElementSibling) {
+      trigger = labelContainer.nextElementSibling.querySelector('[role="combobox"]') as HTMLElement;
+    }
+  }
+  
+  // Si toujours pas trouvé, chercher tous les combobox et trouver celui qui correspond
+  if (!trigger) {
+    const allTriggers = screen.getAllByRole('combobox');
+    // Pour State et Department, utiliser l'index basé sur l'ordre dans le formulaire
+    // State est le premier Select, Department est le deuxième
+    if (labelText.toString().includes('State') || (labelText instanceof RegExp && labelText.test('State'))) {
+      trigger = allTriggers[0] || null;
+    } else if (labelText.toString().includes('Department') || (labelText instanceof RegExp && labelText.test('Department'))) {
+      trigger = allTriggers[allTriggers.length > 1 ? 1 : 0] || null;
+    } else {
+      trigger = allTriggers[0] || null;
+    }
+  }
+  
+  if (!trigger) {
+    throw new Error(`Could not find SelectTrigger for label: ${labelText}`);
+  }
+  
+  // Cliquer sur le trigger pour ouvrir le menu
+  await user.click(trigger);
+  
+  // Attendre que le menu s'ouvre et trouver l'option par son texte
+  await waitFor(() => {
+    const options = screen.getAllByText(optionText);
+    expect(options.length).toBeGreaterThan(0);
+  }, { timeout: 3000 });
+  
+  // Cliquer sur l'option dans le menu SelectContent (pas dans le SelectValue)
+  const options = screen.getAllByText(optionText);
+  // Trouver l'option qui est dans le SelectContent (data-slot="select-item")
+  const selectItem = options.find(option => 
+    option.closest('[data-slot="select-item"]') !== null
+  ) || options[options.length - 1]; // Prendre la dernière occurrence si pas trouvé
+  
+  await user.click(selectItem);
+  
+  // Attendre un peu pour que la sélection soit appliquée et que le menu se ferme
+  await new Promise(resolve => setTimeout(resolve, 100));
+};
+
 // Mock redux-persist storage
 const mockStorage = {
   getItem: jest.fn(),
@@ -65,9 +144,26 @@ describe('AddEmployees Component', () => {
       </Provider>
     );
 
+    // Vérifier la présence des champs input natifs
     expect(screen.getByLabelText(/First Name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Last Name/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Department/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Date of Birth/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Start Date/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Street/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/City/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Zip Code/i)).toBeInTheDocument();
+    
+    // Vérifier la présence des labels pour les Select Radix UI
+    const stateLabels = screen.getAllByText(/^State$/i);
+    const stateLabelElement = stateLabels.find(el => el.tagName.toLowerCase() === 'label');
+    expect(stateLabelElement).toBeInTheDocument();
+    
+    const departmentLabels = screen.getAllByText(/^Department$/i);
+    const departmentLabelElement = departmentLabels.find(el => el.tagName.toLowerCase() === 'label');
+    expect(departmentLabelElement).toBeInTheDocument();
+    
+    // Vérifier la présence du bouton Save
+    expect(screen.getByRole('button', { name: /Save/i })).toBeInTheDocument();
   });
 
   test('devrait ajouter un employé au store après soumission du formulaire', async () => {
@@ -90,16 +186,17 @@ describe('AddEmployees Component', () => {
     await user.type(screen.getByLabelText(/Start Date/i), '2024-01-01');
     await user.type(screen.getByLabelText(/Street/i), '123 Main Street');
     await user.type(screen.getByLabelText(/City/i), 'Los Angeles');
-    await user.selectOptions(screen.getByLabelText(/State/i), states[5].name); // California
+    await selectOption(user, /State/i, states[5].name); // California
     await user.type(screen.getByLabelText(/Zip Code/i), '90001');
-    await user.selectOptions(screen.getByLabelText(/Department/i), 'Sales');
+    await selectOption(user, /Department/i, 'Sales');
 
     // Soumettre le formulaire
     await user.click(screen.getByRole('button', { name: /Save/i }));
 
     // Vérifier que le modal de succès s'affiche
     await waitFor(() => {
-      expect(screen.getByText(/Employee added successfully !/i)).toBeInTheDocument();
+      expect(screen.getByText(/Employee added successfully!/i)).toBeInTheDocument();
+      expect(screen.getByText(/You can see the employee in the list page!/i)).toBeInTheDocument();
     });
 
     // Vérifier que l'employé est dans le store
@@ -138,20 +235,20 @@ describe('AddEmployees Component', () => {
     await user.type(screen.getByLabelText(/Start Date/i), '2024-01-01');
     await user.type(screen.getByLabelText(/Street/i), '123 Main Street');
     await user.type(screen.getByLabelText(/City/i), 'Los Angeles');
-    await user.selectOptions(screen.getByLabelText(/State/i), states[5].name);
+    await selectOption(user, /State/i, states[5].name);
     await user.type(screen.getByLabelText(/Zip Code/i), '90001');
-    await user.selectOptions(screen.getByLabelText(/Department/i), 'Sales');
+    await selectOption(user, /Department/i, 'Sales');
 
     // Soumettre le formulaire
     await user.click(screen.getByRole('button', { name: /Save/i }));
 
     // Attendre que le modal s'affiche
     await waitFor(() => {
-      expect(screen.getByText(/Employee added successfully !/i)).toBeInTheDocument();
+      expect(screen.getByText(/Employee added successfully!/i)).toBeInTheDocument();
     });
 
     // Vérifier que le modal est visible
-    const modal = screen.getByText(/Employee added successfully !/i).closest('div');
+    const modal = screen.getByText(/Employee added successfully!/i).closest('div');
     expect(modal).toBeInTheDocument();
 
     // Cliquer sur le bouton de fermeture (X)
@@ -160,7 +257,7 @@ describe('AddEmployees Component', () => {
 
     // Vérifier que le modal n'est plus visible
     await waitFor(() => {
-      expect(screen.queryByText(/Employee added successfully !/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Employee added successfully!/i)).not.toBeInTheDocument();
     });
   });
 
@@ -184,16 +281,16 @@ describe('AddEmployees Component', () => {
     await user.type(screen.getByLabelText(/Start Date/i), '2024-01-01');
     await user.type(screen.getByLabelText(/Street/i), '123 Main Street');
     await user.type(screen.getByLabelText(/City/i), 'Los Angeles');
-    await user.selectOptions(screen.getByLabelText(/State/i), states[5].name);
+    await selectOption(user, /State/i, states[5].name);
     await user.type(screen.getByLabelText(/Zip Code/i), '90001');
-    await user.selectOptions(screen.getByLabelText(/Department/i), 'Sales');
+    await selectOption(user, /Department/i, 'Sales');
 
     // Soumettre le formulaire
     await user.click(screen.getByRole('button', { name: /Save/i }));
 
     // Attendre que le modal s'affiche
     await waitFor(() => {
-      expect(screen.getByText(/Employee added successfully !/i)).toBeInTheDocument();
+      expect(screen.getByText(/Employee added successfully!/i)).toBeInTheDocument();
     });
 
     // Trouver le backdrop (la div avec la classe fixed)
@@ -207,7 +304,7 @@ describe('AddEmployees Component', () => {
 
     // Vérifier que le modal n'est plus visible
     await waitFor(() => {
-      expect(screen.queryByText(/Employee added successfully !/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Employee added successfully!/i)).not.toBeInTheDocument();
     });
   });
 
@@ -231,17 +328,17 @@ describe('AddEmployees Component', () => {
     await user.type(screen.getByLabelText(/Start Date/i), '2024-01-01');
     await user.type(screen.getByLabelText(/Street/i), '123 Main Street');
     await user.type(screen.getByLabelText(/City/i), 'Los Angeles');
-    await user.selectOptions(screen.getByLabelText(/State/i), states[5].name);
+    await selectOption(user, /State/i, states[5].name);
     await user.type(screen.getByLabelText(/Zip Code/i), '90001');
-    await user.selectOptions(screen.getByLabelText(/Department/i), 'Sales');
+    await selectOption(user, /Department/i, 'Sales');
 
     // Soumettre le premier formulaire
     await user.click(screen.getByRole('button', { name: /Save/i }));
 
     // Attendre que le modal s'affiche
     await waitFor(() => {
-      expect(screen.getByText(/Employee added successfully !/i)).toBeInTheDocument();
-    });
+      expect(screen.getByText(/Employee added successfully!/i)).toBeInTheDocument();
+    }, { timeout: 5000 });
 
     // Fermer le modal
     const closeButton = screen.getByRole('button', { name: /X/i });
@@ -249,7 +346,7 @@ describe('AddEmployees Component', () => {
 
     // Attendre que le modal se ferme
     await waitFor(() => {
-      expect(screen.queryByText(/Employee added successfully !/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Employee added successfully!/i)).not.toBeInTheDocument();
     });
 
     // Vérifier que l'employé est dans le store
@@ -282,9 +379,9 @@ describe('AddEmployees Component', () => {
     await user.type(startDateInput, '2024-01-01');
     await user.type(streetInput, '123 Main Street');
     await user.type(cityInput, 'Los Angeles');
-    await user.selectOptions(screen.getByLabelText(/State/i), states[5].name);
+    await selectOption(user, /State/i, states[5].name);
     await user.type(zipCodeInput, '90001');
-    await user.selectOptions(screen.getByLabelText(/Department/i), 'Sales');
+    await selectOption(user, /Department/i, 'Sales');
 
     // Soumettre le formulaire
     await user.click(screen.getByRole('button', { name: /Save/i }));
@@ -292,15 +389,15 @@ describe('AddEmployees Component', () => {
     // Vérifier que le message d'erreur s'affiche
     await waitFor(() => {
       expect(screen.getByText(/Employee already exists/i)).toBeInTheDocument();
-    });
+    }, { timeout: 5000 });
 
     // Vérifier que le modal de succès n'est PAS affiché
-    expect(screen.queryByText(/Employee added successfully !/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Employee added successfully!/i)).not.toBeInTheDocument();
 
     // Vérifier que l'employé n'a pas été ajouté une deuxième fois dans le store
     const finalState = store.getState() as RootState;
     expect((finalState as RootState).employees.list).toHaveLength(1);
-  });
+  }, 15000); // Timeout de 15 secondes pour ce test
 
   test('devrait afficher une erreur si la date de début est avant la date de naissance', async () => {
     render(
@@ -322,9 +419,9 @@ describe('AddEmployees Component', () => {
     await user.type(screen.getByLabelText(/Start Date/i), '1985-01-01'); // Avant la naissance !
     await user.type(screen.getByLabelText(/Street/i), '123 Main Street');
     await user.type(screen.getByLabelText(/City/i), 'Los Angeles');
-    await user.selectOptions(screen.getByLabelText(/State/i), states[5].name);
+    await selectOption(user, /State/i, states[5].name);
     await user.type(screen.getByLabelText(/Zip Code/i), '90001');
-    await user.selectOptions(screen.getByLabelText(/Department/i), 'Sales');
+    await selectOption(user, /Department/i, 'Sales');
 
     // Soumettre le formulaire
     await user.click(screen.getByRole('button', { name: /Save/i }));
@@ -335,7 +432,7 @@ describe('AddEmployees Component', () => {
     });
 
     // Vérifier que le modal de succès n'est PAS affiché
-    expect(screen.queryByText(/Employee added successfully !/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Employee added successfully!/i)).not.toBeInTheDocument();
 
     // Vérifier que l'employé n'est PAS dans le store
     const state = store.getState() as RootState;

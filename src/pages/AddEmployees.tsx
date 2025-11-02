@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { addEmployee } from '../slices/EmployeeSlice'
 import { useDispatch, useSelector } from 'react-redux'
 import { departments, states } from '../utils/variables'
-import AddEmployeeModal from '../components/addEmployeeModal'
+import Modal from '../components/modal'
 import type { RootState } from '../store/store'
 import type { Employee, FormData } from '../lib/types';
 import { Button } from '@/components/ui/button'
@@ -113,7 +113,7 @@ export default function AddEmployees() {
         <main className="flex flex-col gap-4 justify-center items-center p-4 max-w-screen max-h-screen">
             <header className="flex flex-col gap-4 justify-between items-center">
                 <h1 className="text-2xl font-bold">HRNet</h1>
-                <NavLink to="/list" className="text-blue-500 hover:text-blue-700 ">View Current Employees</NavLink>
+                <NavLink to="/list" className="text-blue-400 hover:text-blue-300 transition-all duration-300 ">View Current Employees</NavLink>
             </header>
             <div className="flex flex-col gap-4 w-full max-w-md mt-4">
                 <h2 className="text-xl font-bold text-center">Add Employee</h2>
@@ -204,7 +204,7 @@ export default function AddEmployees() {
                 </form>
             </div>
             {formData.error && <p className="text-red-500">{formData.error}</p>}
-            {formData.success && isModalOpen && <AddEmployeeModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />}
+            {formData.success && <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Employee added successfully !" message="You can see the employee in the list page !" type="success" />}
         </main>
     )
 }
