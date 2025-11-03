@@ -173,7 +173,7 @@ describe('EmployeeSlice avec Redux Persist', () => {
     });
 
     // Utiliser persistStore pour déclencher la réhydration
-    const persistor = persistStore(newStore);
+ persistStore(newStore);
     
     // Attendre que la réhydration soit complète
     // La réhydration se fait automatiquement lors de la création du persistor

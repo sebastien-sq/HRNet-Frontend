@@ -3,9 +3,13 @@
 import '@testing-library/jest-dom';
 
 // Polyfills pour les APIs Web dans Jest
-import { TextEncoder, TextDecoder } from 'util';
-global.TextEncoder = TextEncoder;
-global.TextDecoder = TextDecoder as any;
+// TextEncoder et TextDecoder sont disponibles dans l'environnement Node.js/Jest
+if (typeof globalThis.TextEncoder === 'undefined') {
+  // @ts-expect-error - require est disponible dans l'environnement Node.js/Jest
+  const { TextEncoder, TextDecoder } = require('util');
+  (globalThis as any).TextEncoder = TextEncoder;
+  (globalThis as any).TextDecoder = TextDecoder;
+}
 
 // Mock localStorage pour les tests
 const localStorageMock = {
@@ -49,7 +53,7 @@ if (typeof Element !== 'undefined') {
 }
 
 // Mock pour ResizeObserver utilisé par certains composants
-global.ResizeObserver = jest.fn().mockImplementation(() => ({
+(globalThis as any).ResizeObserver = jest.fn().mockImplementation(() => ({
   observe: jest.fn(),
   unobserve: jest.fn(),
   disconnect: jest.fn(),

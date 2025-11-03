@@ -21,12 +21,10 @@ import {
     TableRow,
 } from "@/components/ui/table"
 
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { useState } from "react"
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
-import { filters } from "@/utils/variables"
 import { DataTablePagination } from "./data-table-pagination"
+import { DataRowsPerPage } from "./data-rows-per-page"
+import { DataSearchByFilters } from "./data-search-by-filters"
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
@@ -83,26 +81,13 @@ export function DataTable<TData, TValue>({
 
     return (
         <>
-            <div className="flex items-center py-4 justify-end w-full max-w-md gap-2">
-                <Select value={filterType} onValueChange={handleFilterTypeChange}>
-                    <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Filter by..." />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white text-black ">
-                        {filters.map((filter) => (
-                            <SelectItem key={filter.key} value={filter.key} className="cursor-pointer hover:bg-gray-100 text-sm font-medium">
-                                {filter.name}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                <Input
-                    placeholder={filterType ? `Filter by ${filters.find(filter => filter.key === filterType)?.name}...` : "Select a filter type first"}
-                    value={(filterType && table.getColumn(filterType)?.getFilterValue() as string) ?? ""}
-                    onChange={(event) => handleFilterValueChange(event.target.value)}
-                    className="max-w-sm"
-                    disabled={!filterType}
-                />
+            <div className="flex items-center py-4 justify-between w-full max-w-5xl gap-2">
+                <div className="flex items-center gap-2">
+                    <DataRowsPerPage table={table} />
+                </div>
+                <div className="flex items-center gap-2">
+                    <DataSearchByFilters table={table} filterType={filterType} handleFilterTypeChange={handleFilterTypeChange} handleFilterValueChange={handleFilterValueChange} />
+                </div>
             </div>
             <div className="overflow-hidden rounded-md border">
                 <Table>
