@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { addEmployee } from '../slices/EmployeeSlice'
 import { useDispatch, useSelector } from 'react-redux'
 import { departments, states } from '../utils/variables'
-import SimpleModal from '@sebastien-sq/react-simple-modal'
+import SimpleModal from 'sebastien-sq-react-simple-modal'
 import type { RootState } from '../store/store'
 import type { Employee, FormData } from '../lib/types';
 import { Button } from '@/components/ui/button'
