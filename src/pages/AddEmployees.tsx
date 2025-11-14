@@ -14,11 +14,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 // Zod schema & date checks
 const eighteenYearsAgo = new Date();
 eighteenYearsAgo.setFullYear(eighteenYearsAgo.getFullYear() - 18);
-const today = new Date();
 const createEmployeeSchema = (existingEmployees: Employee[]) => {
     return z.object({
-        firstName: z.string().min(2, { message: 'First name is required' }),
-        lastName: z.string().min(2, { message: 'Last name is required' }),
+        firstName: z.string().min(2, { message: 'First name is required and must be at least 2 characters long' }),
+        lastName: z.string().min(2, { message: 'Last name is required and must be at least 2 characters long' }),
         dateOfBirth: z.string().min(1, { message: 'Date of Birth is required' }).refine(
             (val) => {
                 const birthDate = new Date(val);
@@ -27,11 +26,11 @@ const createEmployeeSchema = (existingEmployees: Employee[]) => {
             { message: 'Employee must be at least 18 years old' }
         ),
         startDate: z.string().min(1, { message: 'Start Date is required' }),
-        street: z.string().min(2, { message: 'Street is required' }),
-        city: z.string().min(2, { message: 'City is required' }),
-        state: z.string().refine((val: string) => states.some(state => state.name === val), { message: 'State is required' }),
-        zipCode: z.string().min(5, { message: 'Zip Code is required' }),
-        department: z.string().refine((val: string) => ['Sales', 'Marketing', 'Engineering', 'Human Resources', 'Legal'].includes(val), { message: 'Department is required' }),
+        street: z.string().min(2, { message: 'Street is required and must be at least 2 characters long' }),
+        city: z.string().min(2, { message: 'City is required and must be at least 2 characters long' }),
+        state: z.string().refine((val: string) => states.some(state => state.name === val), { message: 'State is required and must be a valid state' }),
+        zipCode: z.string().min(5, { message: 'Zip Code is required and must be at least 5 characters long' }),
+        department: z.string().refine((val: string) => ['Sales', 'Marketing', 'Engineering', 'Human Resources', 'Legal'].includes(val), { message: 'Department is required and must be a valid department' }),
     }).refine(
         (data) => {
             // Vérifier que la date de début est après la date de naissance
@@ -150,7 +149,6 @@ export default function AddEmployees() {
                                     name="startDate"
                                     placeholder="2025-01-01"
                                     className="w-3/4"
-                                    max={today.toISOString().split('T')[0]}
                                     required
                                 />
                             </div>

@@ -56,6 +56,9 @@ importers:
       redux-persist:
         specifier: ^6.0.0
         version: 6.0.0(react@19.2.0)(redux@5.0.1)
+      sebastien-sq-react-simple-modal:
+        specifier: ^0.0.4
+        version: 0.0.4
       tailwind-merge:
         specifier: ^3.3.1
         version: 3.3.1
@@ -2766,6 +2769,9 @@ packages:
 
   scheduler@0.27.0:
     resolution: {integrity: sha512-eNv+WrVbKu1f3vbYJT/xtiF5syA5HPIMtf9IgY/nKg0sWqzAUEvqY/xm7OcZc/qafLx/iO9FgOmeSAp4v5ti/Q==}
+
+  sebastien-sq-react-simple-modal@0.0.4:
+    resolution: {integrity: sha512-cu2WgNz2Ny61+octNao9hjphM+q4uQvF1oF8nVw5VW8b2I+kuPMvdqOkyhfKnSxO85awSaIh5z0LwF7Bi9T/Yw==}
 
   semver@6.3.1:
     resolution: {integrity: sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==}
@@ -5929,6 +5935,8 @@ snapshots:
       xmlchars: 2.2.0
 
   scheduler@0.27.0: {}
+
+  sebastien-sq-react-simple-modal@0.0.4: {}
 
   semver@6.3.1: {}
 
