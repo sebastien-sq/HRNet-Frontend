@@ -20,9 +20,6 @@ importers:
       '@reduxjs/toolkit':
         specifier: ^2.9.2
         version: 2.9.2(react-redux@9.2.0(@types/react@19.2.2)(react@19.2.0)(redux@5.0.1))(react@19.2.0)
-      '@sebastien-sq/react-simple-modal':
-        specifier: 0.0.3
-        version: 0.0.3
       '@tailwindcss/vite':
         specifier: ^4.1.16
         version: 4.1.16(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2))
@@ -1066,9 +1063,6 @@ packages:
     resolution: {integrity: sha512-TAcgQh2sSkykPRWLrdyy2AiceMckNf5loITqXxFI5VuQjS5tSuw3WlwdN8qv8vzjLAUTvYaH/mVjSFpbkFbpTg==}
     cpu: [x64]
     os: [win32]
-
-  '@sebastien-sq/react-simple-modal@0.0.3':
-    resolution: {integrity: sha512-VN5TnxhrxFEIl69V4qhbt/FdqmDvhRI47aAxYTiz9Etc6QGxHgJ+XaYN+U5Z6+vEgs1BC75rAtYJCV54cv18ig==, tarball: https://npm.pkg.github.com/download/@sebastien-sq/react-simple-modal/0.0.3/939dd3fb79297344b6379dfedeaec4e300341b95}
 
   '@sinclair/typebox@0.27.8':
     resolution: {integrity: sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==}
@@ -4060,8 +4054,6 @@ snapshots:
 
   '@rollup/rollup-win32-x64-msvc@4.52.5':
     optional: true
-
-  '@sebastien-sq/react-simple-modal@0.0.3': {}
 
   '@sinclair/typebox@0.27.8': {}
 
