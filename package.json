@@ -33,7 +33,8 @@
     "redux-persist": "^6.0.0",
     "sebastien-sq-react-simple-modal": "^0.0.4",
     "tailwind-merge": "^3.3.1",
-    "tailwindcss": "^4.1.16"
+    "tailwindcss": "^4.1.16",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
